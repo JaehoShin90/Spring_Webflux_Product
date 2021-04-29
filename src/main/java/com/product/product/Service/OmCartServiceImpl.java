@@ -124,8 +124,9 @@ public class OmCartServiceImpl implements OmCartService{
                 .runOn(Schedulers.newParallel("Api-Parallel"))
                 .concatMap(group -> this.parallelAPITest(group, omCartList))
                 .sequential()
-                .then(Mono.just(omCartList))
-                .flatMapMany(data -> data)
+                .thenMany(omCartList)
+//                .then(Mono.just(omCartList))
+//                .flatMapMany(data -> data)
                 .groupBy(omCart ->  {
 //                    log.info("After Sequential : {}", omCart.getCartSn());
                     return new OmCartDto(omCart.getMbNo(), omCart.getTrNo());
