@@ -36,5 +36,3 @@ out/
 ### VS Code ###
 .vscode/
 
-### Test Config ###
-src/main/java/com/product/product/security

@@ -25,6 +25,7 @@ public class MainRouter {
                 .GET("/api/getCartList", RequestPredicates.all(), mainHandler::getCartList)
                 .GET("/api/getCartListParallel", RequestPredicates.all(), mainHandler::getCartListParallel)
                 .POST("/test", RequestPredicates.all(), mainHandler::test)
+                .POST("/login", RequestPredicates.all(), mainHandler::login)
                 .build();
     }
 }

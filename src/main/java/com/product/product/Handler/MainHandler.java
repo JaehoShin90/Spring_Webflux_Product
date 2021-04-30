@@ -1,12 +1,17 @@
 package com.product.product.Handler;
 
 import com.product.product.Entity.OmCart;
+import com.product.product.Repository.MmbrRepository;
 import com.product.product.Repository.OmCartRepository;
+import com.product.product.Request.AuthReq;
 import com.product.product.Request.UserReq;
+import com.product.product.Response.AuthRes;
 import com.product.product.Service.OmCartService;
+import com.product.product.security.JWTUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
@@ -23,7 +28,12 @@ public class MainHandler {
     OmCartRepository omCartRepository;
 
     @Autowired
+    MmbrRepository mmbrRepository;
+
+    @Autowired
     OmCartService omCartService;
+
+    private final JWTUtil jwtUtil;
 
     public Mono<ServerResponse> setOmCartList(ServerRequest req){
         return req.bodyToFlux(OmCart.class)
@@ -99,10 +109,30 @@ public class MainHandler {
     }
 
     public Mono<ServerResponse> test(ServerRequest req){
+
+//        return Flux.range(1,100)
+//                .concatMap(data -> {
+//                    log.info("Init : {}", String.valueOf(data));
+//                    return Flux.just(data);
+//                })
+//                .parallel(4)
+//                .runOn(Schedulers.newParallel("parallel", 5), 9)
+//                .flatMap(data -> {
+//                    log.info("After Parallel : {}", String.valueOf(data));
+//                    return Flux.just(data);
+//                })
+//                .sequential()
+//                .concatMap(data -> {
+//                    log.info("After Sequential : {}", String.valueOf(data));
+//                    return Flux.just(data);
+//                })
+//                .collectList()
+//                .flatMap(ServerResponse.ok()::bodyValue);
+
         long totalStartTime = System.currentTimeMillis();
         return Flux.range(1,50)
                 .parallel()
-                .runOn(Schedulers.newParallel("API call Test"))
+                .runOn(Schedulers.newParallel("API call Test", Runtime.getRuntime().availableProcessors()))
                 .concatMap(data -> {
                     long startTime = System.currentTimeMillis();
 
@@ -115,10 +145,27 @@ public class MainHandler {
                             });
                 })
                 .sequential()
-                .then(Mono.just("a"))
+                .then(Mono.empty())
                 .flatMap(data -> {
-                        log.info("전체 수행 시간 : {}", System.currentTimeMillis() - totalStartTime);
-                        return ServerResponse.ok().bodyValue("");
+                    log.info("전체 수행 시간 : {}", System.currentTimeMillis() - totalStartTime);
+                    return ServerResponse.ok().bodyValue("");
                 });
+    }
+
+    public Mono<ServerResponse> login(ServerRequest req){
+        return req.bodyToMono(AuthReq.class)
+                .flatMap(auth -> mmbrRepository.findByMmbrId(auth.getUserId())
+                        .flatMap(mmbr -> {
+                            if(mmbr.getMmbrPwd().equals(auth.getPassword())){
+                                return ServerResponse.ok()
+                                        .bodyValue(new AuthRes(jwtUtil.generateToken(mmbr)))
+                                        ;
+                            }else{
+                                return ServerResponse.status(HttpStatus.UNAUTHORIZED).build();
+                            }
+                        })
+                )
+                .switchIfEmpty(ServerResponse.status(HttpStatus.UNAUTHORIZED).build())
+                ;
     }
 }

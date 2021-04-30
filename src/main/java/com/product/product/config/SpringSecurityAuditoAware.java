@@ -16,7 +16,17 @@ public class SpringSecurityAuditoAware implements ReactiveAuditorAware<Mmbr> {
 
     @Override
     public Mono<Mmbr> getCurrentAuditor() {
-        // 추후 Spring Security 연동 예정
+        /* Spring Security 사용 한 소스
+        * return ReactiveSecurityContextHolder.getContext()
+				        .filter(sc-> Objects.nonNull(sc.getAuthentication()))
+				        .map(sc-> sc.getAuthentication())
+				        .flatMap(authentication -> {
+				        	if(Objects.nonNull(authentication.getPrincipal()) == false)
+				        		return Mono.empty();
+				        	return Mono.just(authentication.getPrincipal().toString());
+				        })
+				        .switchIfEmpty(Mono.just("FRONT"));
+        * */
         return mmbrRepository.findByMmbrId("savernet").log();
     }
 }
